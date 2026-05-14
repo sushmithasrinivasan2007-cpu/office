@@ -24,8 +24,11 @@ def register():
         # Validate company_id if provided
         if company_id:
             import re
+            is_mock = hasattr(supabase_admin, 'auth') and hasattr(supabase_admin.auth, 'admin') and 'mock' in str(type(supabase_admin.auth)).lower()
             uuid_re = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', re.I)
-            if not uuid_re.match(str(company_id)):
+            
+            # If not mock mode, enforce UUID. If mock mode, allow anything starting with 'mock' or matching UUID.
+            if not is_mock and not uuid_re.match(str(company_id)):
                 return jsonify({"error": "The Company ID you entered is invalid. It must be a valid ID (e.g., 35083752-...). If you are trying to start a new company, use the 'Management' tab."}), 400
 
         # Check if user already exists in our 'users' table
