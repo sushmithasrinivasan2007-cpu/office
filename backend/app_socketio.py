@@ -31,6 +31,10 @@ def create_app(config_class='config.DevelopmentConfig'):
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
     def serve(path):
+        # IMPORTANT: Do not serve index.html for missing API routes
+        if path.startswith('api/'):
+            return jsonify({"error": "API route not found"}), 404
+            
         if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
             return send_from_directory(app.static_folder, path)
         else:
