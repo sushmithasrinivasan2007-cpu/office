@@ -1,7 +1,16 @@
 // API Configuration
 // Centralizing the API URL to avoid hardcoded strings across the app
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const getApiUrl = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  // If no env var, use the current domain as the backend (since they are bundled)
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return 'http://localhost:5000';
+};
+
+export const API_BASE_URL = getApiUrl();
 
 export const API_ENDPOINTS = {
   AUTH: {
