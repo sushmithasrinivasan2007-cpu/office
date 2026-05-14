@@ -40,7 +40,7 @@ def create_app(config_class='config.DevelopmentConfig'):
     app.config.from_object(config_class)
 
     # Setup CORS
-    CORS(app, supports_credentials=True, origins="*", allow_headers=["Content-Type", "Authorization"])
+    CORS(app, origins="*", allow_headers=["Content-Type", "Authorization"])
 
     # Initialize SocketIO with threading (compatible with Python 3.13)
     # For production with gunicorn, use eventlet: pip install eventlet
