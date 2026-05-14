@@ -79,7 +79,9 @@ MOCK_STORAGE = {
     ],
     "companies": [
         {"id": "mock-company-id", "name": "SmartOffice Solutions", "slug": "smartoffice-solutions"}
-    ]
+    ],
+    "attendance": [],
+    "activity_logs": []
 }
 
 class MockTable:
