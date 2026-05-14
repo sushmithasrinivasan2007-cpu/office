@@ -3,6 +3,7 @@ import {
   Clock, CheckCircle, Zap, MessageSquare, 
   Calendar, Coffee, ArrowRight, Play, Pause, Loader2 
 } from 'lucide-react';
+import { API_BASE_URL } from '../api/config';
 
 function EmployeeSidePanel({ user }) {
   const [time, setTime] = useState(new Date());
