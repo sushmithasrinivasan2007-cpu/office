@@ -14,6 +14,7 @@ class MockAuth:
         class MockUser:
             def __init__(self):
                 self.id = f"mock-user-{int(time.time())}"
+                self.company_id = "mock-company-id"
         class MockResult:
             def __init__(self):
                 self.user = MockUser()
@@ -34,6 +35,7 @@ class MockAuth:
             class MockUser:
                 def __init__(self):
                     self.id = "00000000-0000-0000-0000-000000000001"
+                    self.company_id = "mock-company-id"
             class MockResult:
                 def __init__(self):
                     self.session = MockSession()
@@ -47,7 +49,8 @@ class MockAuth:
                 self.refresh_token = "mock-refresh-token"
         class MockUser:
             def __init__(self):
-                self.id = "00000000-0000-0000-0000-000000000002" # Generic mock user
+                self.id = "00000000-0000-0000-0000-000000000002"
+                self.company_id = "mock-company-id"
         class MockResult:
             def __init__(self):
                 self.session = MockSession()
