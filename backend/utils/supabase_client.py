@@ -90,15 +90,15 @@ class MockTable:
     def select(self, columns="*"): return self
     def insert(self, data):
         if self.table_name not in MOCK_STORAGE: MOCK_STORAGE[self.table_name] = []
-        if isinstance(data, list):
-            for item in data:
-                if 'id' not in item: item['id'] = f"mock-{int(time.time()*1000)}"
-                MOCK_STORAGE[self.table_name].append(item)
-            return MockResponse(data=data)
-        else:
-            if 'id' not in data: data['id'] = f"mock-{int(time.time()*1000)}"
-            MOCK_STORAGE[self.table_name].append(data)
-            return MockResponse(data=[data])
+        # Store for execute()
+        self.pending_data = data if isinstance(data, list) else [data]
+        
+        # Immediate save to mock storage
+        for item in self.pending_data:
+            if 'id' not in item: item['id'] = f"mock-{int(time.time()*1000)}"
+            MOCK_STORAGE[self.table_name].append(item)
+            
+        return self
 
     def update(self, data):
         # Basic update logic
