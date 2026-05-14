@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
-import { MapPin, Briefcase, Users, LayoutDashboard, CreditCard, FileText, BarChart3, Settings as SettingsIcon, Bot, Calendar, Bell, LogOut, User, Menu, X, Building2, Bot as BotIcon, Zap, CheckCircle } from 'lucide-react';
+import { MapPin, Briefcase, Users, LayoutDashboard, CreditCard, FileText, BarChart3, Settings as SettingsIcon, Calendar, Bell, LogOut, User, Menu, X, Building2, Bot as BotIcon, Zap, CheckCircle } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Tasks from './pages/Tasks';
 import Team from './pages/Team';
