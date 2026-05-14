@@ -1,28 +1,35 @@
-# Use a slim Python image for efficiency
-FROM python:3.12-slim
+# STAGE 1: Build the Frontend
+FROM node:20-alpine AS frontend-builder
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm install
+COPY frontend/ ./
+RUN npm run build
 
-# Set environment variables
+# STAGE 2: Build the Backend
+FROM python:3.12-slim
+WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV FLASK_ENV=production
 ENV PYTHONPATH=/app/backend
-
-# Set working directory
-WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install
+# Copy backend requirements and install
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the backend code
+# Copy backend code
 COPY backend/ ./backend/
 
-# Expose the port Flask runs on
+# Copy the built frontend from Stage 1 to the backend's static folder
+COPY --from=frontend-builder /app/frontend/dist ./backend/static
+
+# Expose the port
 EXPOSE 5000
 
 # Start the application
