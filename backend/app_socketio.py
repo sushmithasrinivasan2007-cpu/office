@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_cors import CORS
 from flask_socketio import SocketIO
 from datetime import datetime
@@ -24,8 +24,17 @@ from routes.invoice_routes     import invoice_bp
 from services.websocket_service import socketio
 
 def create_app(config_class='config.DevelopmentConfig'):
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder='static')
     app.url_map.strict_slashes = False
+
+    # Serve Static Frontend
+    @app.route('/', defaults={'path': ''})
+    @app.route('/<path:path>')
+    def serve(path):
+        if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+            return send_from_directory(app.static_folder, path)
+        else:
+            return send_from_directory(app.static_folder, 'index.html')
 
     # Load configuration
     app.config.from_object(config_class)
