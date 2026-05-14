@@ -49,11 +49,7 @@ def create_app(config_class='config.DevelopmentConfig'):
     # Initialize SocketIO with threading (compatible with Python 3.13)
     # For production with gunicorn, use eventlet: pip install eventlet
     async_mode = 'eventlet' if os.getenv('USE_EVENTLET', 'false').lower() == 'true' else 'threading'
-    socketio.init_app(app, cors_allowed_origins=[
-        "http://localhost:3000", "http://localhost:5173", 
-        "http://127.0.0.1:3000", "http://127.0.0.1:5173",
-        frontend_url
-    ], async_mode=async_mode)
+    socketio.init_app(app, cors_allowed_origins="*", async_mode=async_mode)
 
     # Register blueprints
     app.register_blueprint(auth_bp,        url_prefix='/api/auth')
