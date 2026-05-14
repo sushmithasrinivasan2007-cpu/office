@@ -7,6 +7,21 @@ class MockResponse:
         self.error = error
 
 class MockAuth:
+    def __init__(self):
+        self.admin = self
+
+    def create_user(self, data):
+        class MockUser:
+            def __init__(self):
+                self.id = f"mock-user-{int(time.time())}"
+        class MockResult:
+            def __init__(self):
+                self.user = MockUser()
+        return MockResult()
+
+    def update_user_by_id(self, user_id, data):
+        return {"id": user_id, "updated": True}
+
     def sign_in_with_password(self, credentials):
         email = credentials.get('email')
         password = credentials.get('password')
@@ -99,6 +114,8 @@ class MockTable:
         return self
 
     def delete(self): return self
+    def upsert(self, data):
+        return self.insert(data)
     def eq(self, col, val):
         self.filters.append(('eq', col, val))
         return self
