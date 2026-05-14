@@ -1,0 +1,125 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database (Supabase local alternative)
+  postgres:
+    image: postgres:15-alpine
+    container_name: smartos-db
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-smartos-secure-password}
+      POSTGRES_DB: smartos
+      POSTGRES_USER: smartos
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database_schema_complete.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - smartos-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartos"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching & sessions
+  redis:
+    image: redis:7-alpine
+    container_name: smartos-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - smartos-network
+    command: redis-server --appendonly yes
+
+  # Main Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartos-app
+    environment:
+      - FLASK_ENV=${FLASK_ENV:-production}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - DATABASE_URL=postgresql://smartos:${DB_PASSWORD:-smartos-secure-password}@postgres:5432/smartos
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET=${JWT_SECRET}
+
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - APP_URL=${APP_URL:-http://localhost:5000}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "5000:5000"
+    networks:
+      - smartos-network
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: smartos-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./static:/var/www/static:ro
+    depends_on:
+      - app
+    networks:
+      - smartos-network
+    restart: unless-stopped
+
+  # Celery Worker (async tasks)
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartos-celery
+    command: celery -A services.celery_app worker --loglevel=info
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - smartos-network
+    restart: unless-stopped
+
+  # Flower (Celery monitoring)
+  flower:
+    image: mher/flower:1.0
+    container_name: smartos-flower
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    networks:
+      - smartos-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  smartos-network:
+    driver: bridge
