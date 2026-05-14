@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Clock, CheckCircle, Zap, MessageSquare, 
-  Calendar, Coffee, ArrowRight, Play, Pause 
+  Calendar, Coffee, ArrowRight, Play, Pause, Loader2 
 } from 'lucide-react';
 
 function EmployeeSidePanel({ user }) {
   const [time, setTime] = useState(new Date());
   const [isActive, setIsActive] = useState(false);
   const [timer, setTimer] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const clockInterval = setInterval(() => setTime(new Date()), 1000);
@@ -29,13 +30,66 @@ function EmployeeSidePanel({ user }) {
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
+  const handleToggleClock = async () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation not supported');
+      return;
+    }
+
+    setLoading(true);
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      const { latitude, longitude } = position.coords;
+      const endpoint = isActive ? '/api/users/checkout' : '/api/users/checkin';
+      const payload = {
+        user_id: user.id,
+        company_id: user.company_id,
+        latitude,
+        longitude
+      };
+
+      try {
+        const token = localStorage.getItem('smartos_token');
+        const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          setIsActive(!isActive);
+          if (!isActive) {
+            setTimer(0);
+          }
+          alert(data.message);
+        } else {
+          alert(data.error || 'Failed to update attendance');
+        }
+      } catch (error) {
+        console.error('Attendance error:', error);
+        alert('Server connection error');
+      } finally {
+        setLoading(false);
+      }
+    }, (error) => {
+      console.error('GPS Error:', error);
+      alert('Please enable location to clock in/out.');
+      setLoading(false);
+    });
+  };
+
   return (
     <aside className="right-panel">
       {/* Time & Attendance */}
       <section className="panel-section">
         <div className="panel-section-title">
           <span>Attendance</span>
-          <span className="badge badge-blue">Active</span>
+          <span className={`badge ${isActive ? 'badge-blue' : 'badge-gray'}`}>
+            {isActive ? 'Active' : 'Offline'}
+          </span>
         </div>
         <div className="status-card">
           <div style={{ fontSize: '0.875rem', color: 'var(--gray-500)' }}>
@@ -47,9 +101,10 @@ function EmployeeSidePanel({ user }) {
           <div className="flex gap-2 mt-4">
             <button 
               className={`btn ${isActive ? 'btn-danger' : 'btn-primary pulse-primary'} flex-1`}
-              onClick={() => setIsActive(!isActive)}
+              onClick={handleToggleClock}
+              disabled={loading}
             >
-              {isActive ? <Pause size={16} /> : <Play size={16} />}
+              {loading ? <Loader2 className="animate-spin" size={16} /> : (isActive ? <Pause size={16} /> : <Play size={16} />)}
               {isActive ? 'Clock Out' : 'Clock In'}
             </button>
           </div>

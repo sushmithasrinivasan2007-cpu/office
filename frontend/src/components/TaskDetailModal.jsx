@@ -10,31 +10,53 @@ function TaskDetailModal({ task, user, onClose, onUpdate }) {
 
   const handleComplete = async () => {
     setLoading(true);
-    try {
-      const token = localStorage.getItem('smartos_token');
-      const response = await fetch(`${API_BASE_URL}/api/tasks/${task.id}/complete`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          user_id: user.id,
-          completion_notes: note,
-          geo_verified: true
-        })
-      });
-      if (response.ok) {
-        onUpdate();
-      } else {
-        alert('Failed to complete task');
-      }
-    } catch (error) {
-      console.error('Complete error:', error);
-      alert('Error completing task');
-    } finally {
+    
+    // 1. Get real GPS location
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser');
       setLoading(false);
+      return;
     }
+
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      const { latitude, longitude } = position.coords;
+      
+      try {
+        const token = localStorage.getItem('smartos_token');
+        
+        // 2. Call backend to verify location and complete task
+        const response = await fetch(`${API_BASE_URL}/api/tasks/${task.id}/complete`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+            completion_notes: note,
+            user_lat: latitude,
+            user_lng: longitude,
+            geo_verified: true // Backend will still verify these coords
+          })
+        });
+
+        if (response.ok) {
+          onUpdate();
+        } else {
+          const data = await response.json();
+          alert(data.error || 'Failed to complete task');
+        }
+      } catch (error) {
+        console.error('Complete error:', error);
+        alert('Error connecting to server');
+      } finally {
+        setLoading(false);
+      }
+    }, (error) => {
+      console.error('Geolocation error:', error);
+      alert('Please enable location access to complete this task.');
+      setLoading(false);
+    });
   };
 
   const handleEdit = () => {
