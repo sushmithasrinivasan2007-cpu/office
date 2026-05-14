@@ -37,4 +37,4 @@ COPY --from=frontend-builder /app/frontend/dist ./backend/static
 EXPOSE 5000
 
 # Start the application
-CMD ["gunicorn", "--worker-class", "eventlet", "-w", "1", "--bind", "0.0.0.0:5000", "backend.app_socketio:app"]
+CMD ["gunicorn", "--worker-class", "eventlet", "-w", "1", "--bind", "0.0.0.0:5000", "backend.app_socketio:create_app()"]
